@@ -1,73 +1,81 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { MdChevronLeft, MdChevronRight, MdAdd, MdOutlineSettings } from 'react-icons/md';
+import React, { useContext } from 'react';
 import { ChatContext } from '../context/chatContext';
-import logo from '../assets/logo.png';
-import Modal from './Modal';
-import Setting from './Setting';
 
-/**
- * A sidebar component that displays a list of nav items and a toggle
- * for switching between light and dark modes.
- *
- * @param {Object} props - The properties for the component.
- */
 const SideBar = () => {
-  const [open, setOpen] = useState(true);
-  const [, , clearMessages] = useContext(ChatContext);
-  const [modalOpen, setModalOpen] = useState(false);
-
-  function handleResize() {
-    window.innerWidth <= 720 ? setOpen(false) : setOpen(true);
-  }
-
-  useEffect(() => {
-    handleResize();
-  }, []);
-
-  const clearChat = () => clearMessages();
+  const { isMobile } = useContext(ChatContext);
+  const { sidebarOpen, setSidebarOpen } = useContext(ChatContext);
+  const { chats, createChat, deleteChat, setCurrentChatId, currentChat, toggleDarkMode, darkMode } =
+    useContext(ChatContext);
 
   return (
-    <section className={` ${open ? 'w-screen lg:w-96' : 'w-16'} sidebar`}>
-      <div className="sidebar__app-bar">
-        <div className="flex items-center">
-          <div className={`sidebar__app-logo ${!open && 'scale-0 hidden'}`}>
-            <span className="w-8 h-8">
-              <img width="30" src={logo} alt="Logo" />
-            </span>
-          </div>
-          <h1 className={`sidebar__app-title ${!open && 'scale-0 hidden'}`}>SelectQuote</h1>
-        </div>
-        <div className={'sidebar__btn-close'} onClick={() => setOpen(!open)}>
-          {open ? (
-            <MdChevronLeft className="text-slate-700 sidebar__btn-icon" />
-          ) : (
-            <MdChevronRight className="text-slate-700 sidebar__btn-icon" />
-          )}
-        </div>
-      </div>
-      <div className="nav">
-        <span className="border nav__item border-neutral-600" onClick={clearChat}>
-          <div className="nav__icons">
-            <MdAdd />
-          </div>
-          <h1 className={`${!open && 'hidden'}`}>New chat</h1>
-        </span>
-      </div>
+    <div
+      className={`
+    fixed md:relative z-50 h-screen bg-[#202123] text-white flex flex-col
+    transition-all duration-300
+    ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+    md:translate-x-0
+    ${isMobile ? 'w-64' : sidebarOpen ? 'w-64' : 'w-16'}
+  `}
+    >
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-40" />
+      )}
 
-      <div className="nav__bottom">
-        <div onClick={() => setModalOpen(true)} className="nav">
-          <span htmlFor="setting-modal" className="nav__item">
-            <div className="nav__icons">
-              <MdOutlineSettings />
-            </div>
-            <h1 className={`${!open && 'hidden'}`}>Settings</h1>
-          </span>
-        </div>
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="mb-4 p-2 hover:bg-gray-700 rounded transition"
+      >
+        {sidebarOpen ? '⬅' : '➡'}
+      </button>
+
+      {/* Dark Mode Toggle */}
+      <button
+        onClick={toggleDarkMode}
+        className="w-full mb-3 p-2 rounded bg-gray-700 hover:bg-gray-600 transition"
+      >
+        {darkMode ? '☀ Light Mode' : '🌙 Dark Mode'}
+      </button>
+
+      {/* New Chat Button */}
+      <button
+        onClick={createChat}
+        className="w-full bg-gray-700 hover:bg-gray-600 p-2 rounded mb-4 transition-all duration-200"
+      >
+        {sidebarOpen ? '+ New Chat' : '+'}
+      </button>
+      {/* Chat List */}
+      <div className="space-y-2 overflow-y-auto flex-1">
+        {chats.map((chat) => (
+          <div
+            key={chat.id}
+            onClick={() => {
+              setCurrentChatId(chat.id);
+              setSidebarOpen(false); // ✅ close on mobile
+            }}
+            className={`p-2 rounded cursor-pointer flex justify-between items-center
+transition-all duration-200 hover:bg-[#2a2b32]
+${currentChat?.id === chat.id ? 'bg-[#343541]' : ''}`}
+          >
+            {/* Chat Title */}
+            <span onClick={() => setCurrentChatId(chat.id)} className="truncate">
+              {sidebarOpen ? chat.title : '💬'}
+            </span>
+
+            {/* Delete Button */}
+            {sidebarOpen && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // ✅ stops parent click
+                  deleteChat(chat.id);
+                }}
+              >
+                ❌
+              </button>
+            )}
+          </div>
+        ))}
       </div>
-      <Modal title="Setting" modalOpen={modalOpen} setModalOpen={setModalOpen}>
-        <Setting modalOpen={modalOpen} setModalOpen={setModalOpen} />
-      </Modal>
-    </section>
+    </div>
   );
 };
 
