@@ -33,7 +33,7 @@ A modern, responsive chatbot interface built with React, featuring dark mode, ma
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/kratianu11/react-chatbot.git
    cd react-chatbot
    ```
 
@@ -48,6 +48,37 @@ A modern, responsive chatbot interface built with React, featuring dark mode, ma
    ```
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Deployment
+
+### Deploy to Vercel (Recommended)
+
+1. **Connect your GitHub to Vercel:**
+   - Go to [vercel.com](https://vercel.com)
+   - Sign in with your GitHub account
+   - Click "Add New..." → "Project"
+
+2. **Import your repository:**
+   - Search for `react-chatbot`
+   - Select your repository: `kratianu11/react-chatbot`
+   - Click "Import"
+
+3. **Deploy:**
+   - Vercel will automatically detect it's a React app
+   - Click "Deploy"
+   - Wait for the build to complete (usually 2-3 minutes)
+
+4. **Your app will be live!**
+   - Vercel will provide a `.vercel.app` URL
+   - Every push to `main` branch auto-deploys
+
+### Manual Build
+
+```bash
+npm run build
+```
+
+This creates a `build` folder ready for deployment to any static hosting service.
 
 ## Available Scripts
 
