@@ -1,17 +1,21 @@
-import { ChatContext } from './context/chatContext';
 import React, { useContext, Suspense, lazy } from 'react';
+import { ChatContext } from './context/chatContext';
 
 const ChatView = lazy(() => import('./components/ChatView'));
 const SideBar = lazy(() => import('./components/SideBar'));
 
 const App = () => {
   const { darkMode } = useContext(ChatContext);
-  <div className={`flex h-screen ${darkMode ? 'bg-[#343541]' : 'bg-gray-50'}`}></div>;
+
   return (
     <Suspense fallback={<div className="p-4">Loading...</div>}>
-      <div className="flex h-screen bg-[#343541] text-white">
+      <div
+        className={`flex h-screen ${
+          darkMode ? 'bg-[#1a1c24] text-white' : 'bg-gray-100 text-slate-900'
+        }`}
+      >
         {/* Sidebar */}
-        <div className="w-64 border-r bg-white">
+        <div className="w-64 border-r border-slate-800 bg-[#202123] md:w-72">
           <SideBar />
         </div>
 

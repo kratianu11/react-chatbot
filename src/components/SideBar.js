@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { ChatContext } from '../context/chatContext';
 
 const SideBar = () => {
@@ -6,6 +6,11 @@ const SideBar = () => {
   const { sidebarOpen, setSidebarOpen } = useContext(ChatContext);
   const { chats, createChat, deleteChat, setCurrentChatId, currentChat, toggleDarkMode, darkMode } =
     useContext(ChatContext);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredChats = chats.filter((chat) =>
+    chat.title.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   return (
     <div
@@ -43,9 +48,21 @@ const SideBar = () => {
       >
         {sidebarOpen ? '+ New Chat' : '+'}
       </button>
+
+      {/* Search Input */}
+      {sidebarOpen && (
+        <input
+          type="text"
+          placeholder="Search chats..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full mb-4 p-2 rounded bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      )}
+
       {/* Chat List */}
       <div className="space-y-2 overflow-y-auto flex-1">
-        {chats.map((chat) => (
+        {filteredChats.map((chat) => (
           <div
             key={chat.id}
             onClick={() => {
@@ -68,12 +85,16 @@ ${currentChat?.id === chat.id ? 'bg-[#343541]' : ''}`}
                   e.stopPropagation(); // ✅ stops parent click
                   deleteChat(chat.id);
                 }}
+                className="text-red-400 hover:text-red-300"
               >
                 ❌
               </button>
             )}
           </div>
         ))}
+        {filteredChats.length === 0 && searchTerm && (
+          <div className="text-gray-400 text-sm p-2">No chats found</div>
+        )}
       </div>
     </div>
   );

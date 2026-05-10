@@ -1,17 +1,18 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import ChatMessage from './ChatMessage';
 import { ChatContext } from '../context/chatContext';
-import 'react-tooltip/dist/react-tooltip.css';
+import { getBotReply, formatTranscript } from '../services/chatService';
 
 /**
  * A chat view component that displays a list of messages and a form for sending new messages.
  */
 const ChatView = () => {
-  const { setSidebarOpen, currentChat, addMessage, darkMode } = useContext(ChatContext);
+  const { setSidebarOpen, currentChat, addMessage, clearChat, darkMode } = useContext(ChatContext);
   const messagesEndRef = useRef();
   const inputRef = useRef();
   const [isTyping, setIsTyping] = useState(false);
   const [input, setInput] = useState('');
+  const [chatActionLabel, setChatActionLabel] = useState('');
   /**
    * Scrolls the chat area to the bottom.
    */
@@ -40,10 +41,9 @@ const ChatView = () => {
    * @param {Event} e - The submit event of the form.
    */
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !currentChat) return;
 
-    const messageText = input;
-
+    const messageText = input.trim();
     const userMessage = {
       id: Date.now(),
       text: messageText,
@@ -54,46 +54,42 @@ const ChatView = () => {
     addMessage(userMessage);
     setInput('');
     setIsTyping(true);
+    setChatActionLabel('');
 
     const botMessageId = Date.now() + 1;
 
-    // empty bot message
     addMessage({
       id: botMessageId,
       text: '',
       createdAt: Date.now(),
       ai: true,
+      status: 'loading',
     });
 
     try {
-      // ✅ DEMO RESPONSE (no backend)
-      const data = {
-        reply: 'Hi! I’m your demo AI 🤖. Backend is not connected yet.',
-      };
-
+      const reply = await getBotReply(messageText);
       addMessage({
         id: botMessageId,
-        text: data.reply,
+        text: reply,
         createdAt: Date.now(),
         ai: true,
       });
     } catch (error) {
       addMessage({
         id: botMessageId,
-        text: 'Something went wrong ❌',
+        text: 'Something went wrong ❌. Please try again.',
         ai: true,
         status: 'error',
       });
+    } finally {
+      setIsTyping(false);
     }
-
-    setIsTyping(false);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      // 👇 Get input value
-      sendMessage(e);
+      sendMessage();
       inputRef.current.style.height = 'auto';
     }
   };
@@ -113,6 +109,10 @@ const ChatView = () => {
   }, []);
 
   useEffect(() => {
+    inputRef.current?.focus();
+  }, [currentChat?.id]);
+
+  useEffect(() => {
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
       inputRef.current.style.height = inputRef.current.scrollHeight + 'px';
@@ -120,19 +120,24 @@ const ChatView = () => {
   }, [input]);
 
   const retryMessage = async (message) => {
-    if (!message?.text) return;
+    if (!message || !currentChat) return;
 
     setIsTyping(true);
+    setChatActionLabel('');
 
     const botMessageId = message.id;
+    addMessage({
+      ...message,
+      text: '',
+      status: 'loading',
+    });
 
     try {
-      // ✅ demo retry
-      const reply = 'Retry successful ✅ (Demo response)';
-
+      const reply = await getBotReply(message.text || 'Please retry.');
       addMessage({
         id: botMessageId,
         text: reply,
+        createdAt: Date.now(),
         ai: true,
       });
     } catch (error) {
@@ -142,10 +147,50 @@ const ChatView = () => {
         ai: true,
         status: 'error',
       });
+    } finally {
+      setIsTyping(false);
     }
-
-    setIsTyping(false);
   };
+
+  const clearCurrentChat = () => {
+    if (!currentChat?.messages?.length) return;
+    clearChat();
+    setInput('');
+    setChatActionLabel('Chat cleared');
+  };
+
+  const copyConversation = async () => {
+    if (!currentChat?.messages?.length) return;
+    try {
+      await navigator.clipboard.writeText(formatTranscript(currentChat.messages));
+      setChatActionLabel('Copied conversation');
+    } catch (error) {
+      setChatActionLabel('Copy failed');
+    }
+  };
+
+  const downloadConversation = () => {
+    if (!currentChat?.messages?.length) return;
+    const blob = new Blob([formatTranscript(currentChat.messages)], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${currentChat.title.replace(/\s+/g, '_') || 'chat'}_${Date.now()}.txt`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setChatActionLabel('Download ready');
+  };
+
+  useEffect(() => {
+    if (!chatActionLabel) return undefined;
+    const timeout = window.setTimeout(() => setChatActionLabel(''), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [chatActionLabel]);
+
+  const messageCount = currentChat?.messages.length ?? 0;
+
   return (
     <div
       className={`flex flex-col h-screen ${darkMode ? 'bg-[#343541] text-white' : 'bg-gray-50'}`}
@@ -155,14 +200,54 @@ const ChatView = () => {
         {/* HEADER */}
 
         <div
-          className={`h-14 border-b flex items-center px-4 font-medium gap-3 
-${darkMode ? 'bg-[#40414f]' : 'bg-white'}`}
+          className={`h-20 border-b flex flex-col justify-center px-4 font-medium gap-3 transition-colors duration-200
+${darkMode ? 'bg-[#40414f] text-white' : 'bg-white text-slate-900'}`}
         >
-          {/* MOBILE MENU BUTTON */}
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden text-xl">
-            ☰
-          </button>
-          Chat Assistant
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setSidebarOpen(true)} className="md:hidden text-xl">
+                ☰
+              </button>
+              <div>
+                <div className="text-base font-semibold">
+                  {currentChat?.title || 'Chat Assistant'}
+                </div>
+                <div className="text-xs text-gray-400">{messageCount} messages</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <button
+                onClick={clearCurrentChat}
+                disabled={!messageCount}
+                className="rounded-full border px-3 py-1 transition hover:border-white disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Clear current chat"
+              >
+                Clear
+              </button>
+              <button
+                onClick={copyConversation}
+                disabled={!messageCount}
+                className="rounded-full border px-3 py-1 transition hover:border-white disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Copy conversation"
+              >
+                Copy
+              </button>
+              <button
+                onClick={downloadConversation}
+                disabled={!messageCount}
+                className="rounded-full border px-3 py-1 transition hover:border-white disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Download conversation"
+              >
+                Export
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-gray-400">
+            <span>Frontend demo • responsive • polished UI</span>
+            {chatActionLabel && <span className="text-green-300">{chatActionLabel}</span>}
+          </div>
         </div>
 
         {/* MESSAGES AREA */}
@@ -183,10 +268,11 @@ ${darkMode ? 'bg-[#40414f]' : 'bg-white'}`}
 
             {/* TYPING */}
             {isTyping && (
-              <div className="flex gap-1 text-gray-400">
-                <span className="animate-pulse">●</span>
-                <span className="animate-pulse delay-100">●</span>
-                <span className="animate-pulse delay-200">●</span>
+              <div className="flex gap-1 text-gray-400 items-center">
+                <span className="animate-bounce">●</span>
+                <span className="animate-bounce delay-100">●</span>
+                <span className="animate-bounce delay-200">●</span>
+                <span className="ml-2 text-sm">AI is typing...</span>
               </div>
             )}
           </div>
