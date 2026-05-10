@@ -81,8 +81,28 @@ const fallbackReplies = [
 const randomElement = (items) => items[Math.floor(Math.random() * items.length)];
 
 export const getBotReply = async (messageText) => {
-  await delay(900 + Math.random() * 900);
   const normalized = messageText.trim();
+
+  // Try to call the backend API if available (for deployed version)
+  try {
+    const apiUrl = process.env.REACT_APP_API_URL || '/api/chat';
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: normalized }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.reply || 'I could not generate a reply.';
+    }
+  } catch (error) {
+    console.log('API call failed, using local responses:', error.message);
+    // Fall back to local implementation
+  }
+
+  // Local fallback implementation
+  await delay(900 + Math.random() * 900);
 
   for (const entry of responseMap) {
     if (entry.pattern.test(normalized)) {
