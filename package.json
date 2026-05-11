@@ -1,7 +1,9 @@
 {
   "name": "react-chatbotui",
   "version": "1.0.0",
+  "description": "Responsive React chatbot UI with saved conversations, markdown rendering, and demo bot responses.",
   "private": true,
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/kratianu11/react-chatbot.git"
@@ -15,7 +17,6 @@
     "bad-words": "^3.0.4",
     "daisyui": "^2.51.6",
     "moment": "^2.29.4",
-    "openai": "^3.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-ga4": "^2.1.0",
@@ -75,23 +76,16 @@
     "tailwindcss": "^3.2.4"
   },
   "keywords": [
-    "openai",
-    "chatgpt",
-    "text-davinci-003",
-    "dalle",
-    "dall.e",
-    "dalle2",
-    "gpt",
-    "gpt3",
-    "image generation",
-    "machine learning",
-    "conversational ai",
+    "react",
+    "chatbot-ui",
+    "chat-interface",
+    "frontend",
+    "tailwindcss",
+    "markdown",
+    "responsive",
     "conversation",
     "chatbot",
     "chat",
-    "bot",
-    "ai",
-    "ml",
     "bot"
   ]
 }

@@ -9,7 +9,10 @@ app.use(express.json());
 app.post('/chat', async (req, res) => {
   const { message } = req.body;
 
-  // ✅ simple working response
+  if (!message) {
+    return res.status(400).json({ error: 'Message is required' });
+  }
+
   let reply = 'I am still learning 🤖';
 
   if (message.toLowerCase().includes('hello')) {
@@ -18,9 +21,11 @@ app.post('/chat', async (req, res) => {
     reply = 'Goodbye 👋';
   }
 
-  res.json({ reply }); // ✅ IMPORTANT: JSON response
+  res.json({ reply });
 });
 
-app.listen(5000, () => {
-  console.log('Server running on http://localhost:5000');
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });

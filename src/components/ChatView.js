@@ -36,9 +36,7 @@ const ChatView = () => {
    */
 
   /**
-   * Sends our prompt to our API and get response to our request from openai.
-   *
-   * @param {Event} e - The submit event of the form.
+   * Sends the user's message to the configured API or local demo responder.
    */
   const sendMessage = async () => {
     if (!input.trim() || !currentChat) return;
